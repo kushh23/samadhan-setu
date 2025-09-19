@@ -413,7 +413,7 @@ const SignupPage = () => {
 
         // ✅ Redirect after success
         setTimeout(() => {
-            window.open("http://127.0.0.1:5500/sih-frontend/citizen", "_blank");
+            window.location.href = "/citizen"; // adjust path
         }, 3000);
     };
 
