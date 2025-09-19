@@ -330,7 +330,7 @@ export default function OfficialPortal() {
           <div className="row">
             <div className="col-md-6">
               <p>
-                &copy; 2023 Samadhan Setu - City Grievance Portal. All rights
+                &copy; 2025 Samadhan Setu - City Grievance Portal. All rights
                 reserved.
               </p>
             </div>
