@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import "./cityofficial.css";
 
 export default function OfficialPortal() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -12,7 +13,7 @@ export default function OfficialPortal() {
         <div className="container">
           <div className="d-flex justify-content-between align-items-center">
             <div className="logo d-flex align-items-center">
-              <Image
+              <img
                 src="https://i.ibb.co/qZzvg53/Whats-App-Image-2025-09-09-at-08-13-15-f871567f-removebg-preview.png"
                 alt="Samadhan Setu Logo"
                 width={60}
