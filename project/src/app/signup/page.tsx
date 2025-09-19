@@ -1,6 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import '@fortawesome/fontawesome-free/css/all.min.css';
+
 
 // --- Translation Data and Types (Defined before the component) ---
 

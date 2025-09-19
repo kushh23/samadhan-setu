@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import "./admin.css"
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 export default function SignupForm() {
   const [step, setStep] = useState(1);

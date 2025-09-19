@@ -7,6 +7,7 @@ import SamadhanSetuPage from '../components/SamadhanSetuPage/SamadhanSetuPage';
 // To use Leaflet in Next.js, we need to import it dynamically to avoid issues with Server-Side Rendering (SSR).
 import dynamic from 'next/dynamic';
 import './home.css';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 // const MapWithNoSSR = dynamic(() => import('../components/Map'), {
 //   ssr: false,
 // });

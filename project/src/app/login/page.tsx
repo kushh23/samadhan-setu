@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import './login.css';
 import { supabase } from '@/lib/supabaseClient';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 // --- Translation Data and Types (Defined in correct order) ---
 

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import "./cityofficial.css";
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 export default function OfficialPortal() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
