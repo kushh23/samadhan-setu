@@ -182,6 +182,7 @@ const LoginPage = () => {
             console.log("User not found!");
             return;
         }
+        // hello
 
         // 2️⃣ Compare plain passwords
         if (user.password !== password) {
