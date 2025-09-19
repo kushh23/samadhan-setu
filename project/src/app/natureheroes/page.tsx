@@ -1,3 +1,5 @@
+'use client';
+
 import {
   FaBars,
   FaTimes,
@@ -20,9 +22,8 @@ import {
   FaGithub,
   FaTwitter,
 } from "react-icons/fa";
-import "./nature.css"
+import "./nature.css";
 import { useState } from "react";
-
 
 export default function SamadhanSetu() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
