@@ -7,6 +7,7 @@ import SamadhanSetuPage from '../components/SamadhanSetuPage/SamadhanSetuPage';
 // To use Leaflet in Next.js, we need to import it dynamically to avoid issues with Server-Side Rendering (SSR).
 import dynamic from 'next/dynamic';
 import './home.css';
+import Link from 'next/link';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 // const MapWithNoSSR = dynamic(() => import('../components/Map'), {
 //   ssr: false,
@@ -122,8 +123,8 @@ export default function Home() {
                 <i className="fas fa-bullhorn"></i> <span className="translate" data-key="reportCivicIssue">Report Civic Issue</span>
               </button>
               <div className="auth-buttons">
-                <button onClick={ () => window.open('http://127.0.0.1:5500/sih-frontend/login.html', '_blank')} className="btn btn-outline translate" data-key="login">Login</button>
-                <button onClick={ () => window.open('http://127.0.0.1:5500/sih-frontend/signup.html','_blank')} className="btn btn-primary translate" data-key="signUp">Sign Up</button>
+                <Link href='/citizen'><button className="btn btn-outline translate" data-key="login">Login</button></Link>
+                <Link href='/citizen'><button className="btn btn-primary translate" data-key="signUp">Sign Up</button></Link>
               </div>
               <button className="theme-toggle" id="themeToggle">
                 <i className="fas fa-moon"></i>
