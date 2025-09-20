@@ -119,9 +119,9 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <button className="header-report-btn">
+              <Link href = "./signup" ><button className="header-report-btn">
                 <i className="fas fa-bullhorn"></i> <span className="translate" data-key="reportCivicIssue">Report Civic Issue</span>
-              </button>
+              </button></Link>
               <div className="auth-buttons">
                 <Link href='/citizen'><button className="btn btn-outline translate" data-key="login">Login</button></Link>
                 <Link href='/citizen'><button className="btn btn-primary translate" data-key="signUp">Sign Up</button></Link>
