@@ -9,6 +9,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { createClient } from '@supabase/supabase-js'
 import LeafletMap from '../components/LeafletMap/LeafletMap';
+import Link from "next/link"
 
 const supabaseUrl = "https://crlwyhjstuzfkwtntrfp.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNybHd5aGpzdHV6Zmt3dG50cmZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxODAwNTEsImV4cCI6MjA3Mjc1NjA1MX0._ATMJepBQSJJ1WFgjNO44fN2yYqn2jV8c4UkvvRFoGw";
@@ -1464,6 +1465,55 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                             </div>
+                            <h2 className="section-title">
+  <i className="fa-regular fa-square-plus"></i>Civic Connect
+</h2>
+<div className="menu-grid">
+  <div className="menu-card">
+    <div className="menu-icon">
+      <a href="#">
+        <img
+          src="https://i.ibb.co/3yQZ5j98/Whats-App-Image-2025-09-16-at-13-14-21-8745e89b-removebg-preview.png"
+          alt="Eco voice"
+        />
+      </a>
+    </div>
+    <h2>Eco voice</h2>
+    <Link href = "/ecovoice"><button
+      className="glassy-button"
+    
+    >
+      ➟
+    </button></Link>
+  </div>
+
+  <div className="menu-card">
+    <div className="menu-icon">
+      <a href="https://imgbb.com/">
+        <img
+          src="https://i.ibb.co/nNpdRP6v/Whats-App-Image-2025-09-16-at-13-22-17-5aef518f-removebg-preview.png"
+          alt="Nature Heroes"
+        />
+      </a>
+    </div>
+    <h2>Nature Heroes</h2>
+    <Link href="/natureheroes" ><button className="glassy-button">➟</button></Link>
+  </div>
+
+  <div className="menu-card">
+    <div className="menu-icon">
+      <a href="https://imgbb.com/">
+        <img
+          src="https://i.ibb.co/LXm82Bh2/Whats-App-Image-2025-09-16-at-13-24-30-4af26fe5-removebg-preview.png"
+          alt="Relief fund & Donation"
+        />
+      </a>
+    </div>
+    <h2>Relief fund & Donation</h2>
+    <Link href="/donation"><button className="glassy-button">➟</button></Link>
+  </div>
+</div>
+
                             <div className="recent-activity">
                                 <h2 className="section-title"><FontAwesomeIcon icon={faHistory} /> Recent Activity</h2>
                                 <ul className="activity-list">
