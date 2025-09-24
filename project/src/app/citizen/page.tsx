@@ -10,12 +10,28 @@ import "leaflet/dist/leaflet.css";
 import { createClient } from '@supabase/supabase-js'
 import LeafletMap from '../components/LeafletMap/LeafletMap';
 import Link from "next/link"
+import { redirect } from "next/navigation";
+import Card from '../components/Card/Card';
 
-const supabaseUrl = "https://crlwyhjstuzfkwtntrfp.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNybHd5aGpzdHV6Zmt3dG50cmZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxODAwNTEsImV4cCI6MjA3Mjc1NjA1MX0._ATMJepBQSJJ1WFgjNO44fN2yYqn2jV8c4UkvvRFoGw";
+// const supabaseUrl = "https://crlwyhjstuzfkwtntrfp.supabase.co";
+// const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNybHd5aGpzdHV6Zmt3dG50cmZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxODAwNTEsImV4cCI6MjA3Mjc1NjA1MX0._ATMJepBQSJJ1WFgjNO44fN2yYqn2jV8c4UkvvRFoGw";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+interface Card {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    latitude: number;
+    longitude: number;
+    created_at: string;
+}
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function DashboardPage() {
     const [isDarkMode, setIsDarkMode] = useState(false);
@@ -32,7 +48,75 @@ export default function DashboardPage() {
     });
     const [image, setImage] = useState<File | null>(null);
 
+    const [name, setName] = useState<string | null>(null);
+    const [id, setId] = useState("");
 
+    const [card, setCard] = useState<Card[]>([]);
+
+    // Cookie
+
+    useEffect(() => {
+        const user = localStorage.getItem("user");
+
+        if (user) {
+            const parsed = JSON.parse(user);
+            setName(parsed.name);
+            setId(parsed.id);
+            console.log('name', name);
+            console.log('id', id);
+        } else {
+            redirect("/login")
+        }
+
+        const fetchReports = async () => {
+            const { data, error } = await supabase
+                .from("reports")
+                .select("*")
+                .eq("by", id)
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                console.error("Error fetching reports:", error.message);
+                return;
+            }
+
+
+            setCard(data as Card[]);
+        };
+
+        fetchReports();
+        console.log(id);
+
+    }, [name, id]);
+
+    // Fetch reports
+
+    // useEffect(() => {
+    //     const fetchReports = async () => {
+    //         const { data, error } = await supabase
+    //             .from("reports")
+    //             .select("*")
+    //             .eq("by", id)
+    //             .order("created_at", { ascending: false });
+
+    //         if (error) {
+    //             console.error("Error fetching reports:", error.message);
+    //             return;
+    //         }
+
+
+    //         setCard(data as Card[]);
+    //     };
+
+    //     fetchReports();
+    //     console.log(id);
+    // }, []);
+
+    const getImageUrl = (id: string) => {
+        return supabase.storage
+            .from("reports")
+            .getPublicUrl(`${id}.jpg`).data.publicUrl;
+    };
 
     function LocationMarker() {
         useMapEvents({
@@ -51,46 +135,73 @@ export default function DashboardPage() {
         ) : null;
     };
 
-    const handleReport = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // const handleReport = async (e: React.FormEvent) => {
+    //     e.preventDefault();
 
-        try {
-            // Insert into reports with geometry string
-            const { data, error } = await supabase
-                .from("reports")
-                .insert([
-                    {
-                        title: report.title,
-                        description: report.description,
-                        location: `SRID=4326;POINT(${report.longitude} ${report.latitude})`,
-                    },
-                ])
-                .select("id")
-                .single();
+    //     try {
+    //         // Insert into reports with geometry string
+    //         const { data, error } = await supabase
+    //             .from("reports")
+    //             .insert([
+    //                 {
+    //                     title: report.title,
+    //                     description: report.description,
+    //                     location: `SRID=4326;POINT(${report.longitude} ${report.latitude})`,
+    //                 },
+    //             ])
+    //             .select("id")
+    //             .single();
 
-            if (error) throw error;
+    //         if (error) throw error;
 
-            const reportId = data.id;
+    //         const reportId = data.id;
 
-            // Upload image to storage
-            if (image) {
-                const { error: uploadError } = await supabase.storage
-                    .from("reports")
-                    .upload(`${reportId}.jpg`, image, {
-                        cacheControl: "3600",
-                        upsert: true,
-                    });
+    //         // Upload image to storage
+    //         if (image) {
+    //             const { error: uploadError } = await supabase.storage
+    //                 .from("reports")
+    //                 .upload(`${reportId}.jpg`, image, {
+    //                     cacheControl: "3600",
+    //                     upsert: true,
+    //                 });
 
-                if (uploadError) throw uploadError;
-            }
+    //             if (uploadError) throw uploadError;
+    //         }
 
-            alert("Report submitted successfully ✅");
-            setReport({ title: "", description: "", latitude: 0, longitude: 0 });
-            setImage(null);
-        } catch (err: any) {
-            console.error("Error submitting report:", err.message);
-            alert("Failed to submit report ❌");
+    //         alert("Report submitted successfully ✅");
+    //         setReport({ title: "", description: "", latitude: 0, longitude: 0 });
+    //         setImage(null);
+    //     } catch (err: any) {
+    //         console.error("Error submitting report:", err.message);
+    //         alert("Failed to submit report ❌");
+    //     }
+    // };
+
+    const handleReport = async () => {
+
+        const formData = new FormData();
+        formData.append("title", report.title);
+        formData.append("description", report.description);
+        formData.append("latitude", report.latitude.toString());
+        formData.append("longitude", report.longitude.toString());
+        formData.append("id", id);
+        if (image) formData.append("image", image);
+
+        const res = await fetch("/api/report", {
+            method: "POST",
+            body: formData,
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+            alert(`❌ ${result.error}`);
+            return;
         }
+
+        alert("✅ Report submitted successfully!");
+        setReport({ title: "", description: "", latitude: 0, longitude: 0 });
+        setImage(null);
     };
 
     useEffect(() => {
@@ -1390,7 +1501,7 @@ export default function DashboardPage() {
                         <section id="dashboard" className="section active">
                             <div className="welcome-banner">
                                 <div className="user-info">
-                                    <h1>Welcome back, Ayush!</h1>
+                                    <h1>Welcome back, {(name) ? name : 'User'}!</h1>
                                     <p>You&apos;ve made a positive impact in your community with 12 resolved issues</p>
                                 </div>
                                 <div className="user-stats">
@@ -1466,53 +1577,53 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                             <h2 className="section-title">
-  <i className="fa-regular fa-square-plus"></i>Civic Connect
-</h2>
-<div className="menu-grid">
-  <div className="menu-card">
-    <div className="menu-icon">
-      <a href="#">
-        <img
-          src="https://i.ibb.co/3yQZ5j98/Whats-App-Image-2025-09-16-at-13-14-21-8745e89b-removebg-preview.png"
-          alt="Eco voice"
-        />
-      </a>
-    </div>
-    <h2>Eco voice</h2>
-    <Link href = "/ecovoice"><button
-      className="glassy-button"
-    
-    >
-      ➟
-    </button></Link>
-  </div>
+                                <i className="fa-regular fa-square-plus"></i>Civic Connect
+                            </h2>
+                            <div className="menu-grid">
+                                <div className="menu-card">
+                                    <div className="menu-icon">
+                                        <a href="#">
+                                            <img
+                                                src="https://i.ibb.co/3yQZ5j98/Whats-App-Image-2025-09-16-at-13-14-21-8745e89b-removebg-preview.png"
+                                                alt="Eco voice"
+                                            />
+                                        </a>
+                                    </div>
+                                    <h2>Eco voice</h2>
+                                    <Link href="/ecovoice"><button
+                                        className="glassy-button"
 
-  <div className="menu-card">
-    <div className="menu-icon">
-      <a href="https://imgbb.com/">
-        <img
-          src="https://i.ibb.co/nNpdRP6v/Whats-App-Image-2025-09-16-at-13-22-17-5aef518f-removebg-preview.png"
-          alt="Nature Heroes"
-        />
-      </a>
-    </div>
-    <h2>Nature Heroes</h2>
-    <Link href="/natureheroes" ><button className="glassy-button">➟</button></Link>
-  </div>
+                                    >
+                                        ➟
+                                    </button></Link>
+                                </div>
 
-  <div className="menu-card">
-    <div className="menu-icon">
-      <a href="https://imgbb.com/">
-        <img
-          src="https://i.ibb.co/LXm82Bh2/Whats-App-Image-2025-09-16-at-13-24-30-4af26fe5-removebg-preview.png"
-          alt="Relief fund & Donation"
-        />
-      </a>
-    </div>
-    <h2>Relief fund & Donation</h2>
-    <Link href="/donation"><button className="glassy-button">➟</button></Link>
-  </div>
-</div>
+                                <div className="menu-card">
+                                    <div className="menu-icon">
+                                        <a href="https://imgbb.com/">
+                                            <img
+                                                src="https://i.ibb.co/nNpdRP6v/Whats-App-Image-2025-09-16-at-13-22-17-5aef518f-removebg-preview.png"
+                                                alt="Nature Heroes"
+                                            />
+                                        </a>
+                                    </div>
+                                    <h2>Nature Heroes</h2>
+                                    <Link href="/natureheroes" ><button className="glassy-button">➟</button></Link>
+                                </div>
+
+                                <div className="menu-card">
+                                    <div className="menu-icon">
+                                        <a href="https://imgbb.com/">
+                                            <img
+                                                src="https://i.ibb.co/LXm82Bh2/Whats-App-Image-2025-09-16-at-13-24-30-4af26fe5-removebg-preview.png"
+                                                alt="Relief fund & Donation"
+                                            />
+                                        </a>
+                                    </div>
+                                    <h2>Relief fund & Donation</h2>
+                                    <Link href="/donation"><button className="glassy-button">➟</button></Link>
+                                </div>
+                            </div>
 
                             <div className="recent-activity">
                                 <h2 className="section-title"><FontAwesomeIcon icon={faHistory} /> Recent Activity</h2>
@@ -1547,51 +1658,19 @@ export default function DashboardPage() {
                         <section id="reports" className="section active">
                             <h2 className="section-title"><FontAwesomeIcon icon={faFileAlt} /> My Reports</h2>
                             <div className="reports-grid">
-                                {/* Report Card 1 */}
-                                <div className="report-card">
-                                    <div className="report-image">
-                                        <img src="https://i.ibb.co/L9H8b4h/395679905-2469492473467417-3801262948627376751-n.jpg" alt="Pothole" />
-                                    </div>
-                                    <div className="report-content">
-                                        <span className="report-status status-resolved">Resolved</span>
-                                        <h3 className="report-title">Pothole on Main St</h3>
-                                        <p className="report-desc">Large pothole causing traffic issues near the downtown area.</p>
-                                        <div className="report-meta">
-                                            <span><FontAwesomeIcon icon={faMapMarkerAlt} /> Indrapuri, Bhopal</span>
-                                            <span><FontAwesomeIcon icon={faClock} /> 2 days ago</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* Report Card 2 */}
-                                <div className="report-card">
-                                    <div className="report-image">
-                                        <img src="https://i.ibb.co/3s6xW1F/unhygiene-in-India-500x375.jpg" alt="Garbage" />
-                                    </div>
-                                    <div className="report-content">
-                                        <span className="report-status status-progress">In Progress</span>
-                                        <h3 className="report-title">Garbage overflow near park</h3>
-                                        <p className="report-desc">The garbage bin has not been cleared for days, leading to a mess.</p>
-                                        <div className="report-meta">
-                                            <span><FontAwesomeIcon icon={faMapMarkerAlt} /> Arera Colony, Bhopal</span>
-                                            <span><FontAwesomeIcon icon={faClock} /> 5 days ago</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* Report Card 3 */}
-                                <div className="report-card">
-                                    <div className="report-image">
-                                        <img src="https://i.ibb.co/2c3vR2n/423521250-760368819389230-6715014902100803513-n.jpg" alt="Streetlight" />
-                                    </div>
-                                    <div className="report-content">
-                                        <span className="report-status status-new">New</span>
-                                        <h3 className="report-title">Broken Streetlight</h3>
-                                        <p className="report-desc">A streetlight on the corner is not working, making the street unsafe at night.</p>
-                                        <div className="report-meta">
-                                            <span><FontAwesomeIcon icon={faMapMarkerAlt} /> Indrapuri, Bhopal</span>
-                                            <span><FontAwesomeIcon icon={faClock} /> 1 day ago</span>
-                                        </div>
-                                    </div>
-                                </div>
+
+                                {card.map((report) => (
+                                    <Card
+                                        key={report.id}
+                                        title={report.title}
+                                        description={report.description}
+                                        coordinates={{ latitude: report.latitude, longitude: report.longitude }}
+                                        status={report.status || "New"} // default if no status
+                                        timeAgo={new Date(report.created_at).toLocaleDateString()}
+                                        imageUrl={getImageUrl(report.id)}
+                                    />
+                                ))}
+
                             </div>
                         </section>
                     )}
@@ -1605,7 +1684,7 @@ export default function DashboardPage() {
                                 <div className='h-[70vh] w-[80vw]'>1
                                     <LeafletMap />
                                 </div>
-                                
+
                             </div>
                         </section>
                     )}

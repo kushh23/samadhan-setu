@@ -1,7 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['i.ibb.co'], // allow this domain
+    domains: ['cfafdwbhkrjzzmpqmmmo.supabase.co'], // allow this domain
+  },
+   api: {
+    bodyParser: {
+      sizeLimit: '100mb',
+    },
   },
 };
 

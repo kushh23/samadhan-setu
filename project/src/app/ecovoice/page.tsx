@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import "./ecovoice.css"
+import { redirect } from "next/navigation";
 
 // This is a self-contained Next.js page component.
 const EcoVoicePage = () => {
@@ -11,7 +12,57 @@ const EcoVoicePage = () => {
     const [isProfileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setLangDropdownOpen] = useState(false);
     const [chatInput, setChatInput] = useState('');
-    
+    const [reelData, setReelData] = useState({
+        title: '',
+        description: '',
+    });
+    const [video, setVideo] = useState<File | null>(null);
+
+    const [name, setName] = useState<string | null>(null);
+    const [id, setId] = useState("");
+
+    // Cookie
+
+    useEffect(() => {
+        const user = localStorage.getItem("user");
+
+        if (user) {
+            const parsed = JSON.parse(user);
+            setName(parsed.name);
+            setId(parsed.id);
+            console.log('name', name);
+            console.log('id', id);
+        } else {
+            redirect("/login")
+        }
+    }, [name, id]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setVideo(e.target.files[0]); // this is your videoFile
+    }
+  };
+
+    const handleSubmit = async () => {
+        if (!video || !reelData.title || !reelData.description) return;
+
+        const formData = new FormData();
+        formData.append('title', reelData.title);
+        formData.append('description', reelData.description);
+        formData.append('by', id); // replace with your auth
+        formData.append('video', video);
+
+        const res = await fetch('/api/uploadReel', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await res.json();
+        console.log(data); // contains id and public video URL
+        alert('Reel uploaded successfully!');
+    };
+
+
     // Initial chat messages based on your HTML
     const [messages, setMessages] = useState([
         { id: 1, user: 'Amit Sharma', text: 'Has anyone noticed the new waste segregation bins installed near sector 7 market?', time: '10:24 AM', type: 'received' as const },
@@ -39,7 +90,7 @@ const EcoVoicePage = () => {
         }
         localStorage.setItem('theme', theme);
     }, [theme]);
-    
+
     // Effect for closing dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -63,7 +114,7 @@ const EcoVoicePage = () => {
             id: Date.now(),
             user: 'You',
             text: chatInput,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             type: 'sent' as const,
         };
         setMessages([...messages, newMessage]);
@@ -78,11 +129,11 @@ const EcoVoicePage = () => {
                         <img src="https://i.ibb.co/qZzvg53/Whats-App-Image-2025-09-09-at-08-13-15-f871567f-removebg-preview.png" alt="Samadhan Setu Logo" />
                         <div className="logo">Samadhan Setu</div>
                     </div>
-                    
+
                     <nav>
                         <ul></ul>
                     </nav>
-                    
+
                     <div className="header-actions">
                         <div className="language-selector" ref={languageDropdownRef}>
                             <button className="language-btn" onClick={() => setLangDropdownOpen(!isLangDropdownOpen)}>
@@ -100,12 +151,12 @@ const EcoVoicePage = () => {
                         <button className="theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
                             <i className={theme === 'light' ? 'fas fa-moon' : 'fas fa-sun'}></i>
                         </button>
-                        
+
                         <div className="user-profile" ref={profileDropdownRef}>
                             <button className="profile-btn" onClick={() => setProfileDropdownOpen(!isProfileDropdownOpen)}>
                                 <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM2ZDlkZGYiLz4KPHBhdGggZD0iTTE2IDE3LjVDMTkuNTk4NiAxNy41IDIyLjUgMTQuNTk4NiAyMi41IDExQzIyLjUgNy40MDEzNyAxOS41OTg2IDQuNSAxNiA0LjVDMTIuNDAxNCA0LjUgOS41IDcuNDAxMzcgOS41IDExQzkuNSAxNC41OTg2IDEyLjQwMTQgMTcuNSAxNiAxNy41WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTE2IDIwLjVDOS42NjQgMjAuNSA0LjUgMjUuNjY0IDQuNSAzMkgyNy41QzI3LjUgMjUuNjY0IDIyLjMzNiAyMC41IDE2IDIwLjVaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" alt="User" className="profile-img" />
                             </button>
-                            
+
                             {isProfileDropdownOpen && (
                                 <div className="profile-dropdown show">
                                     <a href="#"><i className="fas fa-user"></i> Profile</a>
@@ -122,13 +173,13 @@ const EcoVoicePage = () => {
 
             <main className="dashboard">
                 <div className="container">
-                    
+
                     <div className="eco-voice-header">
                         <img src="https://i.ibb.co/3yQZ5j98/Whats-App-Image-2025-09-16-at-13-14-21-8745e89b-removebg-preview.png" alt="" />
                         <h1>Eco Voice</h1>
                         <p>Connect with your community, share environmental updates, and engage with fellow citizens through reels and conversations. Together we can make our neighborhoods better!</p>
                     </div>
-                    
+
                     <div className="community-features">
                         <div className="feature-card">
                             <div className="feature-icon">
@@ -138,7 +189,7 @@ const EcoVoicePage = () => {
                             <p className="feature-description">Upload short videos about environmental issues, community events, or positive changes in your neighborhood.</p>
                             <a href="#upload" className="feature-cta">Upload Now</a>
                         </div>
-                        
+
                         <div className="feature-card">
                             <div className="feature-icon">
                                 <i className="fas fa-comment-dots"></i>
@@ -147,7 +198,7 @@ const EcoVoicePage = () => {
                             <p className="feature-description">Connect with neighbors, discuss local issues, and organize community initiatives through our chat platform.</p>
                             <a href="#chat" className="feature-cta">Join Conversation</a>
                         </div>
-                        
+
                         <div className="feature-card">
                             <div className="feature-icon">
                                 <i className="fas fa-users"></i>
@@ -157,11 +208,11 @@ const EcoVoicePage = () => {
                             <a href="#" className="feature-cta">Explore Groups</a>
                         </div>
                     </div>
-                    
+
                     <div className="reels-container">
                         <h2 className="section-title"><i className="fas fa-film"></i> Community Reels</h2>
                         <p>See what&apos;s happening in your community through these shared videos</p>
-                        
+
                         <div className="reels-grid">
                             <div className="reel-card">
                                 <div className="reel-video">
@@ -183,7 +234,7 @@ const EcoVoicePage = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="reel-card">
                                 <div className="reel-video">
                                     <img src="https://assets.telegraphindia.com/telegraph/11oriPark1_4C.jpg" alt="Park Renovation" />
@@ -204,7 +255,7 @@ const EcoVoicePage = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="reel-card">
                                 <div className="reel-video">
                                     <img src="https://drop.ndtv.com/albums/NEWS/tree-plantation-in-india/tree-plantation-in-india-green-yatra.jpg" alt="Tree Plantation Drive" />
@@ -227,42 +278,44 @@ const EcoVoicePage = () => {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div id="upload" className="upload-section">
                         <h2 className="section-title"><i className="fas fa-upload"></i> Share Your Reel</h2>
                         <p>Upload a short video to share with your community</p>
-                        
+
                         <form className="upload-form">
                             <div className="form-group">
                                 <label htmlFor="reel-title">Reel Title</label>
-                                <input type="text" id="reel-title" placeholder="Give your reel a title" />
+                                <input type="text" id="reel-title" placeholder="Give your reel a title" value={reelData.title} onChange={(e) => setReelData({ ...reelData, title: e.target.value })} />
                             </div>
-                            
+
                             <div className="form-group">
                                 <label htmlFor="reel-description">Description</label>
-                                <textarea id="reel-description" rows={3} placeholder="Describe your reel..."></textarea>
+                                <textarea id="reel-description" rows={3} placeholder="Describe your reel..." value={reelData.description} onChange={(e) => setReelData({ ...reelData, description: e.target.value })}></textarea>
                             </div>
-                            
+
                             <div className="form-group">
                                 <label>Upload Video</label>
                                 <div className="file-upload" id="fileUpload">
                                     <i className="fas fa-cloud-upload-alt"></i>
                                     <p>Click to upload or drag and drop</p>
                                     <p>MP4, MOV (max 60 seconds)</p>
-                                    <input type="file" accept="video/*" id="video-upload" style={{ display: 'none' }} />
+                                    {/* <input type="file" accept="video/*" id="video-upload" style={{ display: 'none' }} onChange={(e) => setImage(e.target.files?.[0] || null)}/> */}
+
                                 </div>
                             </div>
-                            
-                            <button type="submit" className="btn-submit">Share with Community</button>
+                            <input type="file" id="photo" name="photo" accept="video/*" onChange={handleFileChange} />
+
+                            <button type="button" className="btn-submit" onClick={handleSubmit}>Share with Community</button>
                         </form>
                     </div>
-                    
+
                     <div id="chat" className="community-chat">
                         <div className="chat-header">
                             <h2 className="section-title"><i className="fas fa-comments"></i> Community Chat</h2>
                             <span>Online: 124</span>
                         </div>
-                        
+
                         <div className="chat-messages">
                             {messages.map((msg) => (
                                 <div key={msg.id} className={`message ${msg.type}`}>
@@ -272,10 +325,10 @@ const EcoVoicePage = () => {
                                 </div>
                             ))}
                         </div>
-                        
+
                         <div className="chat-input">
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 placeholder="Type your message..."
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}

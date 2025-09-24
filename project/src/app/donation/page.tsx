@@ -198,9 +198,9 @@ const DonationPage = () => {
                                 <label>Donation Amount (₹)</label>
                                 <div className="amount-options">
                                     {[100, 500, 1000, 2000].map(amount => (
-                                        <div key={amount} className={`amount-option ${donationAmount === amount && !isCustomAmount ? 'active' : ''}`} onClick={() => handleAmountClick(amount)}>₹{amount}</div>
+                                        <div key={amount} className={`amount-option ${donationAmount === amount && !isCustomAmount ? 'active bg-blue-400' : ''}`} onClick={() => handleAmountClick(amount)}>₹{amount}</div>
                                     ))}
-                                    <div className={`amount-option ${isCustomAmount ? 'active' : ''}`} onClick={() => handleAmountClick('custom')}>Custom</div>
+                                    <div className={`amount-option ${isCustomAmount ? 'active bg-blue-400' : ''}`} onClick={() => handleAmountClick('custom')}>Custom</div>
                                 </div>
                                 {isCustomAmount && (
                                     <div className="custom-amount">

@@ -169,34 +169,68 @@ const LoginPage = () => {
 
     // --- Event Handlers ---
 
+    // const handleLogin = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+
+    //     // 1️⃣ Get user row by email
+    //     const { data: user, error } = await supabase
+    //         .from("users")
+    //         .select("id, email, password, full_name, username")
+    //         .eq("email", email)
+    //         .single();
+
+    //     if (error || !user) {
+    //         console.log("User not found!");
+    //         return;
+    //     }
+    //     // hello
+
+    //     // 2️⃣ Compare plain passwords
+    //     if (user.password !== password) {
+    //         console.log("Invalid password!");
+    //         return;
+    //     }
+
+    //     // 3️⃣ Login success
+    //     console.log("Login successful!", user);
+
+    //     // ✅ Redirect after success
+    //     setTimeout(() => {
+    //         window.location.href = "/citizen"; // adjust path
+    //     }, 1500);
+    // };
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 1️⃣ Get user row by email
-        const { data: user, error } = await supabase
-            .from("users")
-            .select("id, email, password, full_name, username")
-            .eq("email", email)
-            .single();
+        const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
 
-        if (error || !user) {
-            console.log("User not found!");
-            return;
-        }
-        // hello
+        const result = await res.json();
 
-        // 2️⃣ Compare plain passwords
-        if (user.password !== password) {
-            console.log("Invalid password!");
+        if (!res.ok) {
+            console.log("Login failed:", result.error);
             return;
         }
 
-        // 3️⃣ Login success
-        console.log("Login successful!", user);
+        // ✅ Save to localStorage
+        localStorage.setItem(
+            "user",
+            JSON.stringify({
+                id: result.id,
+                name: result.name,
+                loggedIn: true,
+            })
+        );
 
-        // ✅ Redirect after success
+        console.log("Login successful!", result);
+
+        // ✅ Redirect
         setTimeout(() => {
-            window.location.href = "/citizen"; // adjust path
+            window.location.href = "/citizen";
         }, 1500);
     };
 

@@ -387,35 +387,66 @@ const SignupPage = () => {
         setCurrentStep(prev => prev - 1);
     };
 
+    // const handleSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault(); // ✅ prevent page reload
+
+    //     const { error: dbError } = await supabase.from("users").insert([
+    //         {
+    //             email: formData.email,
+    //             full_name: formData.fullName,
+    //             username: formData.username,
+    //             phone: formData.phone,
+    //             birthdate: formData.birthdate,
+    //             how_heard: formData.howHeard,
+    //             terms_accepted: formData.terms,
+    //             password: formData.password
+    //         },
+    //     ]);
+
+    //     if (dbError) {
+    //         console.log("Insert failed:", dbError.message);
+    //         // setMessage(`Insert failed: ${dbError.message}`);
+    //         return;
+    //     }
+
+    //     console.log("User saved successfully! Redirecting...");
+
+    //     // ✅ Redirect after success
+    //     setTimeout(() => {
+    //         window.location.href = "/citizen"; // adjust path
+    //     }, 3000);
+    // };
+
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault(); // ✅ prevent page reload
+        e.preventDefault();
 
-        const { error: dbError } = await supabase.from("users").insert([
-            {
-                email: formData.email,
-                full_name: formData.fullName,
-                username: formData.username,
-                phone: formData.phone,
-                birthdate: formData.birthdate,
-                how_heard: formData.howHeard,
-                terms_accepted: formData.terms,
-                password: formData.password
-            },
-        ]);
+        const res = await fetch("/api/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+        });
 
-        if (dbError) {
-            console.log("Insert failed:", dbError.message);
-            // setMessage(`Insert failed: ${dbError.message}`);
+        const result = await res.json();
+
+        if (!res.ok) {
+            console.log("Insert failed:", result.error);
             return;
         }
 
+        // ✅ Save in localStorage
+        localStorage.setItem(
+            "user",
+            JSON.stringify({ id: result.id, name: result.name, loggedIn: true })
+        );
+
         console.log("User saved successfully! Redirecting...");
 
-        // ✅ Redirect after success
         setTimeout(() => {
-            window.location.href = "/citizen"; // adjust path
-        }, 3000);
+            window.location.href = "/citizen";
+        }, 1000);
     };
+
+
 
 
     const getProgressWidth = () => {
