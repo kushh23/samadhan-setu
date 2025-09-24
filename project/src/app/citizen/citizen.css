@@ -63,6 +63,7 @@ header {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
+    padding-left: 140px;
 }
 
 .logo-container {
@@ -482,6 +483,11 @@ nav a.active {
 .menu-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.menu-icon img {
+    height: 60px;
+    width: auto;
 }
 
 .gamification-section {
