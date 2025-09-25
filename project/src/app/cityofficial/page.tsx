@@ -1,353 +1,245 @@
 "use client";
-import { useState } from "react";
-import Image from "next/image";
-import "./cityofficial.css";
-import '@fortawesome/fontawesome-free/css/all.min.css';
 
-export default function OfficialPortal() {
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+import React, { useState, useEffect, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import "./cityofficial.css"
 
-  return (
-    <div>
-      {/* Header */}
-      <header className="official-header">
-        <div className="container">
-          <div className="d-flex justify-content-between align-items-center">
-            <div className="logo d-flex align-items-center">
-              <img
-                src="https://i.ibb.co/qZzvg53/Whats-App-Image-2025-09-09-at-08-13-15-f871567f-removebg-preview.png"
-                alt="Samadhan Setu Logo"
-                width={60}
-                height={60}
-              />
-              <span data-translate="portal_title" className="ms-2">
-                Samadhan Setu - City Officials Portal
-              </span>
-            </div>
-            <div className="d-flex align-items-center">
-              <div className="language-selector">
-                <button className="selector-button">
-                  <i className="fas fa-globe"></i>{" "}
-                  <span data-translate="language">Language</span>
-                </button>
-                <div className="language-list">
-                  <a href="#" data-lang="en">
-                    English
-                  </a>
-                  <a href="#" data-lang="hi">
-                    हिन्दी (Hindi)
-                  </a>
-                  <a href="#" data-lang="ml">
-                    മലയാളം (Malayalam)
-                  </a>
-                  <a href="#" data-lang="te">
-                    తెలుగు (Telugu)
-                  </a>
-                  <a href="#" data-lang="ta">
-                    தமிழ் (Tamil)
-                  </a>
-                </div>
-              </div>
-              <button className="theme-toggle" id="themeToggle">
-                <i className="fas fa-moon"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+// Fix for default Leaflet icon path issue with bundlers like Webpack
+import 'leaflet/dist/leaflet.css';
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
 
-      {/* Main Content */}
-      <div className="container py-4">
-        {/* Dashboard Stats */}
-        <div className="row mb-4">
-          {[
-            {
-              icon: "fas fa-exclamation-circle text-primary",
-              count: 142,
-              label: "total_reports",
-            },
-            {
-              icon: "fas fa-clock text-warning",
-              count: 38,
-              label: "pending_resolution",
-            },
-            {
-              icon: "fas fa-flag text-danger",
-              count: 12,
-              label: "high_priority",
-            },
-            {
-              icon: "fas fa-check-circle text-success",
-              count: 94,
-              label: "resolved_issues",
-            },
-          ].map((stat, i) => (
-            <div className="col-md-3" key={i}>
-              <div className="stats-card text-center">
-                <div className="icon">
-                  <i className={stat.icon}></i>
-                </div>
-                <div className="count">{stat.count}</div>
-                <div className="label" data-translate={stat.label}>
-                  {stat.label.replace("_", " ")}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+// --- Type Definition for a Report ---
+type Report = {
+    id: number;
+    title: string;
+    category: string;
+    status: string;
+    priority: string;
+    reportedBy: string;
+    date: string;
+    location: [number, number];
+    description: string;
+};
 
-        {/* Tabs */}
-        <ul className="nav nav-tabs mb-4" id="officialTabs" role="tablist">
-          <li className="nav-item" role="presentation">
-            <button
-              className="nav-link active"
-              id="issues-tab"
-              data-bs-toggle="tab"
-              data-bs-target="#issues"
-              type="button"
-              role="tab"
-              aria-controls="issues"
-              aria-selected="true"
-            >
-              <i className="fas fa-list me-2"></i>
-              <span data-translate="all_issues">All Issues</span>
-            </button>
-          </li>
-          <li className="nav-item" role="presentation">
-            <button
-              className="nav-link"
-              id="map-tab"
-              data-bs-toggle="tab"
-              data-bs-target="#map"
-              type="button"
-              role="tab"
-              aria-controls="map"
-              aria-selected="false"
-            >
-              <i className="fas fa-map-marked-alt me-2"></i>
-              <span data-translate="map_view">Map View</span>
-            </button>
-          </li>
-          <li className="nav-item" role="presentation">
-            <button
-              className="nav-link"
-              id="analytics-tab"
-              data-bs-toggle="tab"
-              data-bs-target="#analytics"
-              type="button"
-              role="tab"
-              aria-controls="analytics"
-              aria-selected="false"
-            >
-              <i className="fas fa-chart-bar me-2"></i>
-              <span data-translate="analytics">Analytics</span>
-            </button>
-          </li>
-          <li className="nav-item" role="presentation">
-            <button
-              className="nav-link"
-              id="departments-tab"
-              data-bs-toggle="tab"
-              data-bs-target="#departments"
-              type="button"
-              role="tab"
-              aria-controls="departments"
-              aria-selected="false"
-            >
-              <i className="fas fa-building me-2"></i>
-              <span data-translate="departments">Departments</span>
-            </button>
-          </li>
-        </ul>
+// --- Mock Data ---
+// In a real application, this would come from your database or API
+const initialReports: Report[] = [
+    { id: 1, title: 'Broken Streetlight', category: 'Streetlight', status: 'In Progress', priority: 'Urgent', reportedBy: 'User123', date: '2025-09-18', location: [23.2599, 77.4126], description: 'Near main road, not working for 3 days.' },
+    { id: 2, title: 'Pothole on 5th Street', category: 'Pothole', status: 'Submitted', priority: 'High', reportedBy: 'User456', date: '2025-09-17', location: [23.2550, 77.4100], description: 'Large pothole causing traffic issues.' },
+    { id: 3, title: 'Overflowing Trash Bin', category: 'Trash', status: 'Pending', priority: 'Urgent', reportedBy: 'User789', date: '2025-09-16', location: [23.2500, 77.4150], description: 'Needs urgent cleaning at the park entrance.' },
+    { id: 4, title: 'Water Leak at Park', category: 'Water Leak', status: 'Resolved', priority: 'Low', reportedBy: 'User321', date: '2025-09-15', location: [23.2650, 77.4200], description: 'Pipe burst near the playground.' },
+    { id: 5, title: 'Graffiti on Wall', category: 'Graffiti', status: 'Assigned', priority: 'Medium', reportedBy: 'User654', date: '2025-09-14', location: [23.2620, 77.4180], description: 'Offensive graffiti needs removal.' },
+    { id: 6, title: 'Traffic Signal Malfunction', category: 'Traffic Signal', status: 'In Progress', priority: 'High', reportedBy: 'User987', date: '2025-09-13', location: [23.2580, 77.4050], description: 'Signal stuck on red at the main intersection.' },
+    { id: 7, title: 'Sidewalk Crack', category: 'Sidewalk', status: 'Acknowledged', priority: 'Medium', reportedBy: 'User852', date: '2025-09-12', location: [23.2530, 77.4130], description: 'A large crack is a trip hazard for pedestrians.' },
+    { id: 8, title: 'Noise Complaint', category: 'Noise', status: 'Submitted', priority: 'Low', reportedBy: 'User963', date: '2025-09-11', location: [23.2490, 77.4080], description: 'Loud music from the neighboring building late at night.' },
+    { id: 9, title: 'Streetlight Flickering', category: 'Streetlight', status: 'Pending', priority: 'Medium', reportedBy: 'User741', date: '2025-09-10', location: [23.2510, 77.4160], description: 'Intermittent issue with the streetlight.' },
+    { id: 10, title: 'Other: Tree Fallen', category: 'Other', status: 'Resolved', priority: 'Low', reportedBy: 'User159', date: '2025-09-09', location: [23.2470, 77.4120], description: 'A large tree branch is blocking the road after the storm.' },
+];
 
-        {/* Tabs Content */}
-        <div className="tab-content" id="officialTabsContent">
-          {/* Issues Tab (shortened example) */}
-          <div
-            className="tab-pane fade show active"
-            id="issues"
-            role="tabpanel"
-            aria-labelledby="issues-tab"
-          >
-            <div className="dashboard-section">
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h3 className="section-title" data-translate="report_management">
-                  Report Management
-                </h3>
-                {/* Filters and Sort */}
-                <div className="d-flex">
-                  <div className="dropdown me-2">
-                    <button
-                      className="btn btn-outline-primary dropdown-toggle"
-                      type="button"
-                      id="filterDropdown"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      <i className="fas fa-filter me-1"></i>
-                      <span data-translate="filter">Filter</span>
-                    </button>
-                    <ul className="dropdown-menu" aria-labelledby="filterDropdown">
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          All Issues
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          High Priority
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Pending Resolution
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Resolved
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="dropdown">
-                    <button
-                      className="btn btn-outline-secondary dropdown-toggle"
-                      type="button"
-                      id="sortDropdown"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      <i className="fas fa-sort me-1"></i>
-                      <span data-translate="sort">Sort</span>
-                    </button>
-                    <ul className="dropdown-menu" aria-labelledby="sortDropdown">
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Newest First
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Oldest First
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Priority
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+// --- Helper Components for Styling ---
+const StatusBadge = ({ status }: { status: string }) => {
+    const statusClasses: { [key: string]: string } = {
+        'Pending': 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
+        'In Progress': 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+        'Acknowledged': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300',
+        'Submitted': 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300',
+        'Resolved': 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
+        'Assigned': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300',
+    };
+    return <span className={`px-2 py-1 rounded text-xs font-medium ${statusClasses[status] || 'bg-gray-100 text-gray-700'}`}>{status}</span>;
+};
 
-              {/* Issues Table */}
-              <div className="table-responsive issues-table">
-                <table className="table table-hover">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Issue Type</th>
-                      <th>Location</th>
-                      <th>Reported On</th>
-                      <th>Priority</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>#1247</td>
-                      <td>Pothole</td>
-                      <td>Hoshangabad Road</td>
-                      <td>2 hours ago</td>
-                      <td>
-                        <span className="badge priority-high">High</span>
-                      </td>
-                      <td>
-                        <span className="badge status-new">New</span>
-                      </td>
-                      <td>
-                        <button className="btn btn-sm btn-primary me-1">
-                          <i className="fas fa-eye"></i>
+const PriorityBadge = ({ priority }: { priority: string }) => {
+    const priorityClasses: { [key: string]: string } = {
+        'Urgent': 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
+        'High': 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
+        'Medium': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300',
+        'Low': 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
+    };
+    return <span className={`px-2 py-1 rounded text-xs font-medium ${priorityClasses[priority]}`}>{priority}</span>;
+};
+
+export default function AdminDashboardPage() {
+    const [isDarkMode, setIsDarkMode] = useState(false);
+    const [allReports, setAllReports] = useState<Report[]>(initialReports);
+    const [filters, setFilters] = useState({ search: '', status: 'All Status', type: 'All Types' });
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+
+    useEffect(() => {
+        const isDark = localStorage.getItem('darkMode') === 'true';
+        setIsDarkMode(isDark);
+    }, []);
+
+   useEffect(() => {
+    // This now correctly targets the <body> with the '.dark-mode' class
+    if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('darkMode', 'true');
+    } else {
+        document.body.classList.remove('dark-mode');
+        localStorage.setItem('darkMode', 'false');
+    }
+}, [isDarkMode]);
+
+    const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { id, value } = e.target;
+        setFilters(prev => ({ ...prev, [id.replace('Filter', '').replace('search', 'search')]: value }));
+    };
+
+    const handleMarkResolved = (id: number) => {
+        if (window.confirm('Are you sure you want to mark this issue as resolved?')) {
+            setAllReports(prev => prev.map(report => report.id === id ? { ...report, status: 'Resolved' } : report));
+        }
+    };
+    
+    const handleViewDetails = (report: Report) => {
+        setSelectedReport(report);
+        setShowDetailsModal(true);
+    };
+
+    const filteredReports = useMemo(() => {
+        return allReports.filter(report => {
+            const searchMatch = report.title.toLowerCase().includes(filters.search.toLowerCase()) || report.description.toLowerCase().includes(filters.search.toLowerCase());
+            const statusMatch = filters.status === 'All Status' || report.status === filters.status;
+            const typeMatch = filters.type === 'All Types' || report.category === filters.type;
+            return searchMatch && statusMatch && typeMatch;
+        });
+    }, [allReports, filters]);
+
+    const stats = useMemo(() => {
+        const counts = allReports.reduce((acc, report) => {
+            acc[report.status] = (acc[report.status] || 0) + 1;
+            return acc;
+        }, {} as { [key: string]: number });
+        counts['Total Reports'] = allReports.length;
+        return counts;
+    }, [allReports]);
+
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-green-50 to-slate-100 dark:from-slate-900 dark:to-gray-800 p-4 md:p-6">
+            <div className="max-w-7xl mx-auto">
+                <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 px-4 py-3 rounded-xl shadow-md">
+                    <div>
+                        <h1 className="text-3xl md:text-5xl font-extrabold flex items-center gap-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-700 via-blue-800 to-green-700">
+                            <img src="https://i.ibb.co/3yy6jxM9/logo.jpg" alt="Logo" className="w-16 h-16 object-cover rounded-full border-4 border-cyan-700 shadow-lg" />
+                            Municipal Admin Dashboard
+                        </h1>
+                        <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">Empowering communities to manage civic issues</p>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg shadow-sm font-semibold">
+                            {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
                         </button>
-                        <button className="btn btn-sm btn-success">
-                          <i className="fas fa-user-check"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                    </div>
+                </header>
+
+                <div className="bg-white dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-lg rounded-xl mb-10 p-4">
+                    <h2 className="text-2xl font-bold mb-4 text-center text-slate-800 dark:text-slate-200">City Civic Issues Map</h2>
+                    <div style={{ height: '400px', borderRadius: '0.75rem', overflow: 'hidden' }}>
+                        <MapContainer center={[23.2599, 77.4126]} zoom={13} style={{ height: '100%', width: '100%' }}>
+                            <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            />
+                            {filteredReports.map(report => (
+                                <Marker key={report.id} position={report.location as L.LatLngExpression}>
+                                    <Popup><b>{report.title}</b><br/>{report.status}</Popup>
+                                </Marker>
+                            ))}
+                        </MapContainer>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-10">
+                    <div className="bg-white dark:bg-slate-800/50 p-4 rounded-lg shadow-sm text-center"><div className="text-3xl font-extrabold text-slate-900 dark:text-cyan-300">{stats['Total Reports'] || 0}</div><div className="text-sm text-slate-500 dark:text-cyan-400 mt-1">Total Reports</div></div>
+                    <div className="bg-white dark:bg-slate-800/50 p-4 rounded-lg shadow-sm text-center"><div className="text-3xl font-extrabold text-slate-900 dark:text-orange-300">{stats['Pending'] || 0}</div><div className="text-sm text-slate-500 dark:text-orange-400 mt-1">Pending</div></div>
+                    <div className="bg-white dark:bg-slate-800/50 p-4 rounded-lg shadow-sm text-center"><div className="text-3xl font-extrabold text-slate-900 dark:text-blue-300">{stats['In Progress'] || 0}</div><div className="text-sm text-slate-500 dark:text-blue-400 mt-1">In Progress</div></div>
+                    <div className="bg-white dark:bg-slate-800/50 p-4 rounded-lg shadow-sm text-center"><div className="text-3xl font-extrabold text-slate-900 dark:text-yellow-300">{stats['Acknowledged'] || 0}</div><div className="text-sm text-slate-500 dark:text-yellow-400 mt-1">Acknowledged</div></div>
+                    <div className="bg-white dark:bg-slate-800/50 p-4 rounded-lg shadow-sm text-center"><div className="text-3xl font-extrabold text-slate-900 dark:text-purple-300">{stats['Submitted'] || 0}</div><div className="text-sm text-slate-500 dark:text-purple-400 mt-1">Submitted</div></div>
+                    <div className="bg-white dark:bg-slate-800/50 p-4 rounded-lg shadow-sm text-center"><div className="text-3xl font-extrabold text-slate-900 dark:text-green-300">{stats['Resolved'] || 0}</div><div className="text-sm text-slate-500 dark:text-green-400 mt-1">Resolved</div></div>
+                    <div className="bg-white dark:bg-slate-800/50 p-4 rounded-lg shadow-sm text-center"><div className="text-3xl font-extrabold text-slate-900 dark:text-indigo-300">{stats['Assigned'] || 0}</div><div className="text-sm text-slate-500 dark:text-indigo-400 mt-1">Assigned</div></div>
+                </div>
+
+                <div className="mb-8 bg-white dark:bg-slate-800/50 p-4 rounded-lg shadow-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="searchInput" value={filters.search} onChange={handleFilterChange} placeholder="Search reports..." className="bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 focus:border-cyan-500 rounded-lg w-full p-2 transition-all md:col-span-1" />
+                        <select id="statusFilter" value={filters.status} onChange={handleFilterChange} className="bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 focus:border-cyan-500 rounded-lg p-2 w-full transition-all">
+                            {['All Status', 'Pending', 'In Progress', 'Acknowledged', 'Submitted', 'Resolved', 'Assigned'].map(s => <option key={s}>{s}</option>)}
+                        </select>
+                        <select id="typeFilter" value={filters.type} onChange={handleFilterChange} className="bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 focus:border-cyan-500 rounded-lg p-2 w-full transition-all">
+                           {['All Types', 'Pothole', 'Streetlight', 'Trash', 'Water Leak', 'Graffiti', 'Traffic Signal', 'Sidewalk', 'Noise', 'Other'].map(t => <option key={t}>{t}</option>)}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800/50 rounded-xl shadow-sm overflow-hidden">
+                    <div className="p-4 font-bold text-slate-800 dark:text-slate-200 text-lg">
+                        Reports Management ({filteredReports.length})
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 dark:bg-slate-700">
+                                <tr>
+                                    <th className="p-3 text-sm font-semibold text-slate-600 dark:text-slate-300">Title</th>
+                                    <th className="p-3 text-sm font-semibold text-slate-600 dark:text-slate-300">Category</th>
+                                    <th className="p-3 text-sm font-semibold text-slate-600 dark:text-slate-300">Status</th>
+                                    <th className="p-3 text-sm font-semibold text-slate-600 dark:text-slate-300">Priority</th>
+                                    <th className="p-3 text-sm font-semibold text-slate-600 dark:text-slate-300">Date</th>
+                                    <th className="p-3 text-sm font-semibold text-slate-600 dark:text-slate-300">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredReports.map(report => (
+                                    <tr key={report.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                        <td className="p-3"><div className="font-semibold text-slate-800 dark:text-slate-200">{report.title}</div><div className="text-xs text-slate-500 dark:text-slate-400">{report.reportedBy}</div></td>
+                                        <td className="p-3 text-sm text-slate-600 dark:text-slate-400">{report.category}</td>
+                                        <td className="p-3"><StatusBadge status={report.status} /></td>
+                                        <td className="p-3"><PriorityBadge priority={report.priority} /></td>
+                                        <td className="p-3 text-sm text-slate-600 dark:text-slate-400">{report.date}</td>
+                                        <td className="p-3 flex flex-col gap-1">
+                                            <button onClick={() => handleViewDetails(report)} className="text-xs px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded">View Details</button>
+                                            {report.status !== 'Resolved' && (
+                                                <button onClick={() => handleMarkResolved(report.id)} className="text-xs px-3 py-1 bg-green-100 hover:bg-green-200 dark:bg-green-900/50 dark:hover:bg-green-800/50 text-green-700 dark:text-green-300 rounded">Mark Resolved</button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <footer className="text-center mt-8 text-slate-500 dark:text-slate-400">
+                    © 2025 Municipal Admin Dashboard. All rights reserved.
+                </footer>
             </div>
-          </div>
 
-          {/* Map / Analytics / Departments Tabs go here (similar JSX conversion) */}
+            {/* Report Details Modal */}
+            {showDetailsModal && selectedReport && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-lg relative animate-fadeIn">
+                        <button onClick={() => setShowDetailsModal(false)} className="absolute top-2 right-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-2xl">&times;</button>
+                        <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-slate-100">{selectedReport.title}</h2>
+                        <div className="space-y-3 text-slate-600 dark:text-slate-300">
+                            <p><strong>Description:</strong> {selectedReport.description}</p>
+                            <p><strong>Category:</strong> {selectedReport.category}</p>
+                            <p><strong>Reported By:</strong> {selectedReport.reportedBy}</p>
+                            <p><strong>Date:</strong> {selectedReport.date}</p>
+                            <p><strong>Location:</strong> {selectedReport.location.join(', ')}</p>
+                            <div className="flex items-center gap-4"><strong>Status:</strong> <StatusBadge status={selectedReport.status} /></div>
+                            <div className="flex items-center gap-4"><strong>Priority:</strong> <PriorityBadge priority={selectedReport.priority} /></div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
-
-      {/* Sidebar */}
-      <button
-        className="toggle-btn"
-        onClick={() => setSidebarOpen(true)}
-      >
-        <i className="fas fa-bars"></i> <span>Menu</span>
-      </button>
-
-      <div className={`slidebar ${isSidebarOpen ? "open" : ""}`} id="sidebar">
-        <div className="close-btn" onClick={() => setSidebarOpen(false)}>
-          <i className="fas fa-times"></i>
-        </div>
-        <h1>Samadhan Setu</h1>
-        <ul className="Menu">
-          <li className="active">
-            <a href="#">
-              <i className="fa-solid fa-user"></i> User Profile
-            </a>
-          </li>
-          <li>
-            <a href="#">
-              <i className="fa-solid fa-envelope"></i> Messages
-            </a>
-          </li>
-          <li>
-            <a href="#">
-              <i className="fa-solid fa-exclamation-circle"></i> Reports
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <div
-        className={`overlay ${isSidebarOpen ? "active" : ""}`}
-        onClick={() => setSidebarOpen(false)}
-      ></div>
-
-      {/* Footer */}
-      <footer className="official-footer">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-6">
-              <p>
-                &copy; 2025 Samadhan Setu - City Grievance Portal. All rights
-                reserved.
-              </p>
-            </div>
-            <div className="col-md-6 text-md-end">
-              <a href="#" className="text-light me-3">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-light me-3">
-                Terms of Service
-              </a>
-              <a href="#" className="text-light">
-                Contact Us
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+    );
 }
