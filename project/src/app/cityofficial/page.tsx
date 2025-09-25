@@ -67,10 +67,14 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
 
 export default function AdminDashboardPage() {
     const [isDarkMode, setIsDarkMode] = useState(false);
-    const [allReports, setAllReports] = useState<Report[]>(initialReports);
+    const [allReports, setAllReports] = useState<Report[]>(initialReports.map(r => ({ ...r, resolvedData: undefined })));
     const [filters, setFilters] = useState({ search: '', status: 'All Status', type: 'All Types' });
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+    const [showResolveModal, setShowResolveModal] = useState(false);
+    const [resolvingReport, setResolvingReport] = useState<Report | null>(null);
+    const [resolutionNotes, setResolutionNotes] = useState("");
+    const [resolutionImage, setResolutionImage] = useState<string | null>(null);
 
     useEffect(() => {
         const isDark = localStorage.getItem('darkMode') === 'true';
@@ -93,10 +97,39 @@ export default function AdminDashboardPage() {
         setFilters(prev => ({ ...prev, [id.replace('Filter', '').replace('search', 'search')]: value }));
     };
 
-    const handleMarkResolved = (id: number) => {
-        if (window.confirm('Are you sure you want to mark this issue as resolved?')) {
-            setAllReports(prev => prev.map(report => report.id === id ? { ...report, status: 'Resolved' } : report));
+    const handleMarkResolved = (report: Report) => {
+        setResolvingReport(report);
+        setResolutionNotes("");
+        setResolutionImage(null);
+        setShowResolveModal(true);
+    };
+
+    const confirmResolve = () => {
+        if (resolvingReport) {
+            setAllReports(prev => prev.map(report =>
+                report.id === resolvingReport.id
+                    ? {
+                        ...report,
+                        status: 'Resolved',
+                        resolvedData: {
+                            notes: resolutionNotes,
+                            image: resolutionImage,
+                        },
+                    }
+                    : report
+            ));
         }
+        setShowResolveModal(false);
+        setResolvingReport(null);
+        setResolutionNotes("");
+        setResolutionImage(null);
+    };
+
+    const cancelResolve = () => {
+        setShowResolveModal(false);
+        setResolvingReport(null);
+        setResolutionNotes("");
+        setResolutionImage(null);
     };
     
     const handleViewDetails = (report: Report) => {
@@ -207,7 +240,7 @@ export default function AdminDashboardPage() {
                                         <td className="p-3 flex flex-col gap-1">
                                             <button onClick={() => handleViewDetails(report)} className="text-xs px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded">View Details</button>
                                             {report.status !== 'Resolved' && (
-                                                <button onClick={() => handleMarkResolved(report.id)} className="text-xs px-3 py-1 bg-green-100 hover:bg-green-200 dark:bg-green-900/50 dark:hover:bg-green-800/50 text-green-700 dark:text-green-300 rounded">Mark Resolved</button>
+                                                <button onClick={() => handleMarkResolved(report)} className="text-xs px-3 py-1 bg-green-100 hover:bg-green-200 dark:bg-green-900/50 dark:hover:bg-green-800/50 text-green-700 dark:text-green-300 rounded">Mark Resolved</button>
                                             )}
                                         </td>
                                     </tr>
@@ -236,6 +269,68 @@ export default function AdminDashboardPage() {
                             <p><strong>Location:</strong> {selectedReport.location.join(', ')}</p>
                             <div className="flex items-center gap-4"><strong>Status:</strong> <StatusBadge status={selectedReport.status} /></div>
                             <div className="flex items-center gap-4"><strong>Priority:</strong> <PriorityBadge priority={selectedReport.priority} /></div>
+                            {/* Show resolution notes and image if present */}
+                            {selectedReport.status === 'Resolved' && (selectedReport as any).resolvedData && (
+                                <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded">
+                                    <p><strong>Resolution Notes:</strong> {(selectedReport as any).resolvedData.notes}</p>
+                                    {(selectedReport as any).resolvedData.image && (
+                                        <div className="mt-2">
+                                            <p><strong>Resolved Image:</strong></p>
+                                            <img src={(selectedReport as any).resolvedData.image} alt="Resolved issue" className="max-h-48 rounded shadow border mt-1" />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Mark Resolved Modal */}
+            {showResolveModal && resolvingReport && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md relative animate-fadeIn">
+                        <button onClick={cancelResolve} className="absolute top-2 right-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-2xl">&times;</button>
+                        <h2 className="text-xl font-bold mb-4 text-green-700 dark:text-green-300">Mark as Resolved</h2>
+                        <div className="space-y-2 text-slate-700 dark:text-slate-200">
+                            <p>Are you sure you want to mark <span className="font-semibold">{resolvingReport.title}</span> as <span className="font-semibold text-green-700 dark:text-green-300">Resolved</span>?</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">This action cannot be undone.</p>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                            <label className="block text-sm font-medium">Resolution Notes:</label>
+                            <textarea
+                                className="w-full rounded border p-2 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100"
+                                rows={3}
+                                value={resolutionNotes}
+                                onChange={e => setResolutionNotes(e.target.value)}
+                                placeholder="Enter resolution notes..."
+                            />
+                            <div className="proof-upload-section mt-4 p-4 rounded-xl border-2 border-dashed border-green-300 bg-green-50 flex flex-col items-center justify-center shadow-lg">
+                                <label className="block text-base font-bold text-green-700 mb-2">Proof of Issue Resolved:</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="block w-full text-sm mb-2 bg-white border border-green-300 rounded-lg px-3 py-2 focus:outline-none focus:border-green-500 transition-all"
+                                    onChange={e => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = ev => setResolutionImage(ev.target?.result as string);
+                                            reader.readAsDataURL(file);
+                                        } else {
+                                            setResolutionImage(null);
+                                        }
+                                    }}
+                                />
+                                {resolutionImage && (
+                                    <img src={resolutionImage} alt="Preview" className="max-h-40 mt-3 rounded-xl border-2 border-green-400 shadow-xl" />
+                                )}
+                                <span className="text-xs text-green-500 mt-2">Upload a clear image as proof of resolution</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-4 mt-6 justify-end">
+                            <button onClick={cancelResolve} className="px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600">Cancel</button>
+                            <button onClick={confirmResolve} className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 font-semibold">Confirm</button>
                         </div>
                     </div>
                 </div>

@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import './home.css';
 import Link from 'next/link';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import { redirect } from "next/navigation";
 // const MapWithNoSSR = dynamic(() => import('../components/Map'), {
 //   ssr: false,
 // });
@@ -119,12 +120,13 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <Link href = "./signup" ><button className="header-report-btn">
+              <button className="header-report-btn">
                 <i className="fas fa-bullhorn"></i> <span className="translate" data-key="reportCivicIssue">Report Civic Issue</span>
-              </button></Link>
+              </button>
               <div className="auth-buttons">
-                <Link href='/citizen'><button className="btn btn-outline translate" data-key="login">Login</button></Link>
-                <Link href='/citizen'><button className="btn btn-primary translate" data-key="signUp">Sign Up</button></Link>
+                <span onClick={ () => redirect("/login") }><button className="btn btn-outline translate" data-key="login">Login</button></span>
+
+                <span onClick ={ ()=> redirect ('/signup')}><button className="btn btn-primary translate" data-key="signUp">Sign Up</button></span>
               </div>
               <button className="theme-toggle" id="themeToggle">
                 <i className="fas fa-moon"></i>
