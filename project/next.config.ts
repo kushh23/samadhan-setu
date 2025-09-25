@@ -7,12 +7,9 @@ const nextConfig = {
     // Disable ESLint during builds
     ignoreDuringBuilds: true,
   },
-   api: {
-    bodyParser: {
-      sizeLimit: '100mb',
-    },
+  outputFileTracingRoot: __dirname,
   },
-};
+
 
 module.exports = nextConfig;
 
